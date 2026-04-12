@@ -106,7 +106,7 @@ Aura Store is a strong backend foundation and portfolio-ready project. It alread
 - Flyway or Liquibase migrations
 - Real payment gateway integration
 - Admin dashboard
-- Frontend application in React or Next.js
+- Frontend application in React.  --Completed basic ui react + vite frontend on 12-04-2026
 - Docker support
 - CI/CD pipeline
 - Monitoring and observability
