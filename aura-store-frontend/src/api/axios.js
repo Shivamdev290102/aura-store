@@ -1,14 +1,27 @@
 import axios from "axios";
+import useAuthStore from "../store/authStore";
 
 const API = axios.create({
   baseURL: "http://localhost:8080/api",
 });
 
-// Optional: add interceptor later for auth (JWT)
+API.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().token;
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
 API.interceptors.response.use(
   (res) => res,
   (err) => {
-    console.error("API Error:", err);
+    if (err.response?.status === 403) {
+      alert("Session expired. Login again.");
+      useAuthStore.getState().logout();
+    }
     return Promise.reject(err);
   }
 );

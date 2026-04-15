@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { registerUser, getUserByEmail } from "../api/userApi";
+import { registerUser } from "../api/userApi";
 import useAuthStore from "../store/authStore";
 import { useNavigate } from "react-router-dom";
 
@@ -17,18 +17,49 @@ function Login() {
 
   const handleSubmit = async () => {
     try {
-      let res;
-
       if (isRegister) {
-        res = await registerUser(form);
-      } else {
-        res = await getUserByEmail(form.email);
+        const res = await registerUser(form);
+
+        if (!res.data?.userId) {
+          alert("Registration failed");
+          return;
+        }
+
+        alert("Registered successfully. Please login.");
+        setIsRegister(false);
+        return;
       }
 
-      setUser(res.data);
-      navigate("/");
+      const res = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Login failed response:", text);
+        alert("Login failed");
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data.token) {
+        setUser(data.user, data.token);
+        navigate("/");
+      } else {
+        alert("Invalid credentials");
+      }
+
     } catch (err) {
-      alert("Login failed or user not found");
+      console.error(err);
+      alert("Login failed");
     }
   };
 
@@ -37,35 +68,22 @@ function Login() {
       <h2>{isRegister ? "Register" : "Login"}</h2>
 
       {isRegister && (
-        <input
-          placeholder="Name"
-          onChange={(e) =>
-            setForm({ ...form, name: e.target.value })
-          }
+        <input placeholder="Name"
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
         />
       )}
 
-      <input
-        placeholder="Email"
-        onChange={(e) =>
-          setForm({ ...form, email: e.target.value })
-        }
+      <input placeholder="Email"
+        onChange={(e) => setForm({ ...form, email: e.target.value })}
       />
 
-      <input
-        type="password"
-        placeholder="Password"
-        onChange={(e) =>
-          setForm({ ...form, password: e.target.value })
-        }
+      <input type="password" placeholder="Password"
+        onChange={(e) => setForm({ ...form, password: e.target.value })}
       />
 
       {isRegister && (
-        <input
-          placeholder="Phone"
-          onChange={(e) =>
-            setForm({ ...form, phone: e.target.value })
-          }
+        <input placeholder="Phone"
+          onChange={(e) => setForm({ ...form, phone: e.target.value })}
         />
       )}
 
@@ -75,13 +93,8 @@ function Login() {
         {isRegister ? "Register" : "Login"}
       </button>
 
-      <p
-        style={{ cursor: "pointer", marginTop: "10px" }}
-        onClick={() => setIsRegister(!isRegister)}
-      >
-        {isRegister
-          ? "Already have account? Login"
-          : "New user? Register"}
+      <p onClick={() => setIsRegister(!isRegister)} style={{ cursor: "pointer" }}>
+        {isRegister ? "Login" : "Register"}
       </p>
     </div>
   );
